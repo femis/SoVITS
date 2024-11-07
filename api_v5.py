@@ -36,6 +36,8 @@ def tts_handle(req: dict):
         # 保存音频到本地文件
         sf.write(output_file, audio_data, sr)
         print(f"音频已保存到: {output_file}")
+        # 清理缓存
+        tts_instance.empty_cache()
         return {
             "path": output_file,
             "success": 1,
