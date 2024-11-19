@@ -102,6 +102,7 @@ def hello():
     output_file = json.get('output_file', 'generated_audio.wav')
     yaml_path = json.get('yaml_path', 'GPT_SoVITS/configs/daiyu.yaml')
     unique_id = json.get('unique_id', '123456')
+    seed = json.get('seed', -1)
     result = tts_handle({
         "text": text,  # 待合成的文本内容
         "text_lang": "zh",  # 待合成文本的语言。
@@ -119,7 +120,7 @@ def hello():
         "speed_factor": float(speed_factor),  # 控制合成音频的播放速度。。
         "split_bucket": True,  # 是是否将批量数据分割成多个桶进行处理。
         "fragment_interval": 0.3,  # 控制音频片段的间隔时间。 。
-        "seed": -1,  # 随机种子，用于保证结果的可复现性。
+        "seed": int(seed),  # 随机种子，用于保证结果的可复现性。
         "media_type": "wav",
         "streaming_mode": False,
         "parallel_infer": True,  # 是否使用并行推理。
