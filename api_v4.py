@@ -103,6 +103,7 @@ def hello():
     yaml_path = json.get('yaml_path', 'GPT_SoVITS/configs/daiyu.yaml')
     unique_id = json.get('unique_id', '123456')
     seed = json.get('seed', -1)
+    tts_init_max = json.get('tts_init_max', 5) # 最大缓存个数;
     result = tts_handle({
         "text": text,  # 待合成的文本内容
         "text_lang": "zh",  # 待合成文本的语言。
@@ -126,7 +127,8 @@ def hello():
         "parallel_infer": True,  # 是否使用并行推理。
         "repetition_penalty": 1.35,  # T2S模型中的重复惩罚参数，用于减少文本中重复词语的生成。
         "tts_infer_yaml_path": yaml_path,
-        "unique_id": unique_id
+        "unique_id": unique_id,
+        "tts_init_max": int(tts_init_max)
     })
     end_time = time.time()
     print(f"制作请求完成; 耗时：{end_time - start_time}秒，当前时间：{get_time()}")
