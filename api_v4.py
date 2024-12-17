@@ -5,11 +5,15 @@ from flask import Flask, request, jsonify
 import time
 from datetime import datetime
 import argparse
+
+from sympy import false
+
 app = Flask(__name__)
 parser = argparse.ArgumentParser(description='文字转语言服务')
 
 tts_config_cache = {}  # 缓存 TTS_Config 对象
 tts_init_cache = {}
+is_makeing = 0         #是否正在制作中
 def get_tts_config(req):
     global tts_config_cache  # 使用global声明来访问外部的tts_config_cache
     tts_infer_yaml_path = req.get("tts_infer_yaml_path", "GPT_SoVITS/configs/tts_infer.yaml")
@@ -33,6 +37,7 @@ def get_tts_config(req):
 
 # 加载TTS缓存
 def init_tts (req) :
+    global tts_init_cache
     unique_id = req.get("unique_id", "123456")
     tts_init_max = req.get("tts_init_max", 5)
     tts_config = get_tts_config(req)
@@ -90,7 +95,9 @@ def get_time():
     return formatted_now
 @app.route('/', methods=['GET','POST'])
 def hello():
+    global is_makeing
     start_time = time.time()
+    is_makeing = 1
     print(f"即将开始制作，当前时间：{get_time()}")
     json = request.json
     text = json.get('text', '早知他来，我就不来了')
@@ -98,11 +105,12 @@ def hello():
     prompt_text = json.get('prompt_text', '')
     aux_ref_audio = json.get('aux_ref_audio', [])
     text_split_method = json.get('text_split_method', 'cut2')
-    speed_factor = json.get('speed_factor', 1.15)
+    speed_factor = json.get('speed_factor', 1)
     output_file = json.get('output_file', 'generated_audio.wav')
     yaml_path = json.get('yaml_path', 'GPT_SoVITS/configs/daiyu.yaml')
     unique_id = json.get('unique_id', '123456')
     seed = json.get('seed', -1)
+    batch_size = json.get('batch_size',20) # 批次大小
     tts_init_max = json.get('tts_init_max', 5) # 最大缓存个数;
     result = tts_handle({
         "text": text,  # 待合成的文本内容
@@ -116,7 +124,7 @@ def hello():
         "temperature": 1,  # 采样时的温度参数，影响生成的随机性。
         "text_split_method": text_split_method,  # 文本分割方法
         "output_file": output_file,  # 保存到本地的文件
-        "batch_size": 20,  # 推理时的批量大小。
+        "batch_size": int(batch_size),  # 推理时的批量大小。
         "batch_threshold": 1,  # 批量分割的阈值。
         "speed_factor": float(speed_factor),  # 控制合成音频的播放速度。。
         "split_bucket": True,  # 是是否将批量数据分割成多个桶进行处理。
@@ -133,9 +141,38 @@ def hello():
     end_time = time.time()
     print(f"制作请求完成; 耗时：{end_time - start_time}秒，当前时间：{get_time()}")
     print(f"生成结果: {result}")
+    is_makeing = 0
     return jsonify(result)
 
+@app.route('/find', methods=['GET','POST'])
+def find():
+    try:
+        # 获取个数及名字
+
+        tts_len = len(tts_init_cache)
+        tts_len_keys = tts_init_cache.keys()
+
+        config_len = len(tts_config_cache)
+        config_len_keys = tts_config_cache.keys()
+
+        result = {
+            'tts_len' : {
+                'count' : tts_len,
+                'list' : list(tts_len_keys)
+            },      # 实例的个数
+            'config_len': {
+                'count': config_len,
+                'list':  list(config_len_keys)
+            }, # 配置文件个数
+            'is_makeing': is_makeing  # 是否制作中
+        }
+        print(f"查询结果: {result}")
+        return jsonify(result)
+    except Exception as e:
+        app.logger.error(f"处理 /find 请求时发生异常: {e}")  # 记录异常信息
+        return jsonify({"error": "处理请求时发生内部错误"}), 500  # 返回错误响应
+
 if __name__ == '__main__':
-    parser.add_argument('--port', type=str, default="5101", help='输入端口号')
+    parser.add_argument('--port', type=str, default="5003", help='输入端口号')
     args = parser.parse_args()
     app.run(debug=False, host="0.0.0.0", port=args.port)
