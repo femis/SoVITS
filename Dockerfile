@@ -17,7 +17,7 @@ RUN apt-get update && \
 # Copy only requirements.txt initially to leverage Docker cache
 WORKDIR /workspace
 COPY requirements.txt /workspace/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt  -i https://mirrors.aliyun.com/pypi/simple/
 
 # Define a build-time argument for image type
 ARG IMAGE_TYPE=full
@@ -27,16 +27,20 @@ ARG IMAGE_TYPE=full
 COPY ./Docker /workspace/Docker 
 # elite 类型的镜像里面不包含额外的模型
 RUN if [ "$IMAGE_TYPE" != "elite" ]; then \
-        chmod +x /workspace/Docker/download.sh && \
-        /workspace/Docker/download.sh && \
+		chmod +x /workspace/Docker/download.sh && \
+		sed -i 's/\r$//' /workspace/Docker/download.sh && \
+		sed -i 's/\r$//' /workspace/Docker/links.txt && \
+		sed -i 's/\r$//' /workspace/Docker/links.sha256 && \
+		/workspace/Docker/download.sh && \
         python /workspace/Docker/download.py && \
         python -m nltk.downloader averaged_perceptron_tagger cmudict; \
     fi
 
 
+
 # Copy the rest of the application
 COPY . /workspace
 
-EXPOSE 9871 9872 9873 9874 9880
+EXPOSE 9871 9872 9873 9874 9880 5006 5007 5008
 
-CMD ["python", "webui.py"]
+CMD ["python", "api_run.py"]
