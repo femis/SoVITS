@@ -9,6 +9,18 @@ import argparse
 import os
 import torch
 from pydub import AudioSegment
+
+import sys
+import os
+
+# 获取项目根目录
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), './GPT_SoVITS'))
+print("追加项目根目录:", project_root)
+
+# 确保项目根目录在 sys.path 中
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from GPT_SoVITS.TTS_infer_pack.TTS import TTS, TTS_Config
 
 app = Flask(__name__)
