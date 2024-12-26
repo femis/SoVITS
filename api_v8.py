@@ -1,6 +1,5 @@
 # coding=utf-8
 import requests
-from GPT_SoVITS.TTS_infer_pack.TTS import TTS, TTS_Config
 import soundfile as sf
 import tempfile
 from flask import Flask, request, jsonify, send_file
@@ -10,8 +9,10 @@ import argparse
 import os
 import torch
 from pydub import AudioSegment
+from GPT_SoVITS.TTS_infer_pack.TTS import TTS, TTS_Config
 
 app = Flask(__name__)
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 parser = argparse.ArgumentParser(description='文字转语言服务')
 # 获取当前目录 绝对地址
 temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "TEMP")

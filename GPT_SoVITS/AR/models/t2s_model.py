@@ -5,8 +5,8 @@ from typing import List, Optional
 import torch
 from tqdm import tqdm
 
-from AR.models.utils import make_pad_mask
-from AR.models.utils import (
+from GPT_SoVITS.AR.models.utils import make_pad_mask
+from GPT_SoVITS.AR.models.utils import (
     topk_sampling,
     sample,
     logits_to_probs,
