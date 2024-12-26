@@ -13,7 +13,6 @@ services:
       - ./reference:/workspace/reference
       - ./GPT_weights_v2:/workspace/GPT_weights_v2
       - ./SoVITS_weights_v2:/workspace/SoVITS_weights_v2
-      - ./GPT_SoVITS/configs:/workspace/GPT_SoVITS/configs
     working_dir: /workspace
     ports:
       - "9880:9880"
