@@ -2,18 +2,21 @@
 import requests
 from GPT_SoVITS.TTS_infer_pack.TTS import TTS, TTS_Config
 import soundfile as sf
-from aiofiles import tempfile
+import tempfile
 from flask import Flask, request, jsonify, send_file
 import time
 from datetime import datetime
 import argparse
 import os
+import torch
 from pydub import AudioSegment
 
 app = Flask(__name__)
 parser = argparse.ArgumentParser(description='文字转语言服务')
 # 获取当前目录 绝对地址
 temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "TEMP")
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print('当前使用的设备是：', device)
 
 tts_config_cache = {}  # 缓存 TTS_Config 对象
 tts_init_cache = {}
@@ -65,47 +68,47 @@ def init_tts (req) :
     return tts_init_cache[unique_id]
 
 # 下载文件
-def download_file(url):
-  # 判断文件是 http 开头才执行, 否则直接返回
-  if not url.startswith('http'):
-    return url
-  # 发送GET请求
-  try:
-    response = requests.get(url)
-    # 确保请求成功
-    if response.status_code == 200:
-      with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3', dir=temp_dir) as temp_file:
-        temp_file.write(response.content)
-        temp_file_path = temp_file.name  # 获取临时文件的路径
-      print(f'文件已成功下载到系统缓存目录: {temp_file_path}')
-      return temp_file_path
-    else:
-      print('下载失败，状态码:', response.status_code)
-      return ""
-  except Exception as e:
-    print('下载失败')
-    return ""
+def download_file(url:str = ''):
+    # 判断文件是 http 开头才执行, 否则直接返回
+    if not url.startswith('http'):
+        return url
+    # 发送GET请求
+    try:
+        response = requests.get(url)
+        # 确保请求成功
+        if response.status_code == 200:
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3', dir=temp_dir) as temp_file:
+                temp_file.write(response.content)
+                temp_file_path = temp_file.name  # 获取临时文件的路径
+            print(f'文件已成功下载到系统缓存目录: {temp_file_path}')
+            return temp_file_path
+        else:
+            print('下载失败，状态码:', response.status_code)
+            return ""
+    except Exception as e:
+        print('下载失败')
+        return ""
 
 # 将mp3转wav
 def convert_mp3_to_wav(mp3_file_path, wav_file_path):
-  # 加载MP3文件
-  audio = AudioSegment.from_mp3(mp3_file_path)
-  # 导出为WAV文件
-  audio.export(wav_file_path, format="wav")
-  print('转WAV成功', wav_file_path)
-  return wav_file_path
+    # 加载MP3文件
+    audio = AudioSegment.from_mp3(mp3_file_path)
+    # 导出为WAV文件
+    audio.export(wav_file_path, format="wav")
+    print('转WAV成功', wav_file_path)
+    return wav_file_path
 
 # 将wav转mp3
 def convert_wav_to_mp3(wav_file_path, mp3_file_path ):
-  # 加载WAV文件
-  wav_file = AudioSegment.from_wav(wav_file_path)
-  # 导出为MP3文件
-  wav_file.export(mp3_file_path, format="mp3")
-  return mp3_file_path
+    # 加载WAV文件
+    wav_file = AudioSegment.from_wav(wav_file_path)
+    # 导出为MP3文件
+    wav_file.export(mp3_file_path, format="mp3")
+    return mp3_file_path
 
 # 获取临时文件
 def get_temp_file(ext:str = '.mp3'):
-    output_file = tempfile.NamedTemporaryFile(delete=False, suffix=ext).name
+    output_file = tempfile.NamedTemporaryFile(delete=False, suffix=ext, dir=temp_dir).name
     print(f"临时文件路径: {output_file}")
     return output_file
 
@@ -114,7 +117,7 @@ def tts_handle(req: dict):
     # 打印传入的配置信息
     print(f"传入的配置是: {req}")
     # 保存到本地的音频
-    output_file = req.get("output_file", "generated_audio.wav")
+    output_file = get_temp_file()
 
     try:
         # 使用创建的TTS配置对象初始化TTS类的实例
@@ -126,9 +129,10 @@ def tts_handle(req: dict):
         # 保存音频到本地文件
         sf.write(output_file, audio_data, sr)
         print(f"音频已保存到: {output_file}")
-
+        file_name = os.path.basename(output_file)
         return {
             "path": output_file,
+            'name': file_name,
             "success": 1,
             "msg": "制作成功!"
         }
@@ -145,7 +149,7 @@ def get_time():
     # 打印格式化的当前日期和时间
     formatted_now = datetime.now().strftime("%Y年%m月%d日 %H时%M分%S秒")
     return formatted_now
-@app.route('/make', methods=['GET','POST'])
+@app.route('/make', methods=['POST'])
 def enter():
     global is_makeing
     start_time = time.time()
@@ -155,7 +159,7 @@ def enter():
     json = request.json
     text = json.get('text', '早知他来，我就不来了')
 
-    ref_audio_path_url = json.get('ref_audio_path', 'example/model-dali.mp3')
+    ref_audio_path_url = json.get('ref_audio_path', 'https://vr-static.he29.com/public/case/rabbit/model-baijing.mp3')
     ref_audio_path = download_file(ref_audio_path_url)
 
     prompt_text = json.get('prompt_text', '')
@@ -208,14 +212,26 @@ def enter():
 
 # 下载文件
 @app.route('/download', methods=['GET'])
-def download_file():
-    # 从GET请求获取文件名并且进行解码
-    temp_file_path = request.args.get('url', '')
-    # 文件不存在就返回404
-    if not os.path.exists(temp_file_path):
-        return jsonify({'error': '文件不存在'})
-    # 从本地读取文件并且输出
-    return send_file(temp_file_path, as_attachment=True)
+def download():
+    # 从GET请求获取文件路径
+    file_path = request.args.get('path', '')
+    try:
+        # 检查路径是否包含 TEMP
+        if 'TEMP' in file_path:
+            # 截取 TEMP 后面的部分
+            relative_path = file_path.split('TEMP', 1)[1].lstrip(os.sep)
+            # 构建完整的路径
+            full_path = os.path.join(PROJECT_ROOT, 'TEMP', relative_path)
+        else:
+            # 直接使用传递的相对路径
+            full_path = os.path.join(PROJECT_ROOT, 'TEMP', file_path)
+        # 文件不存在就返回404
+        if not os.path.exists(full_path):
+            return jsonify({'error': '文件不存在'}), 404
+        # 从本地读取文件并且输出
+        return send_file(full_path, as_attachment=True)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/', methods=['GET'])
 def find():

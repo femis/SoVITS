@@ -6,6 +6,10 @@ LABEL version="dev-20240209"
 LABEL description="Docker image for GPT-SoVITS"
 
 
+RUN sed -i 's@http://archive.ubuntu.com/ubuntu/@http://mirrors.aliyun.com/ubuntu/@g' /etc/apt/sources.list && \
+       sed -i 's@http://security.ubuntu.com/ubuntu/@http://mirrors.aliyun.com/ubuntu/@g' /etc/apt/sources.list
+
+
 # Install 3rd party apps
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
@@ -20,7 +24,7 @@ COPY requirements.txt /workspace/
 RUN pip install --no-cache-dir -r requirements.txt  -i https://mirrors.aliyun.com/pypi/simple/
 
 # Define a build-time argument for image type
-ARG IMAGE_TYPE=full
+ARG IMAGE_TYPE=elite
 
 # Conditional logic based on the IMAGE_TYPE argument
 # Always copy the Docker directory, but only use it if IMAGE_TYPE is not "elite"
@@ -36,11 +40,9 @@ RUN if [ "$IMAGE_TYPE" != "elite" ]; then \
         python -m nltk.downloader averaged_perceptron_tagger cmudict; \
     fi
 
-
-
 # Copy the rest of the application
 COPY . /workspace
 
-EXPOSE 9871 9872 9873 9874 9880 5006 5007 5008
+EXPOSE 5006 5007 5008
 
 CMD ["python", "api_run.py"]

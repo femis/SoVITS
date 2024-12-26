@@ -1,17 +1,19 @@
 version: '3.8'
-
 services:
   gpt-sovits:
-    image: breakstring/gpt-sovits:latest   # please change the image name and tag base your environment. If the tag contains the word 'elite', such as "latest-elite", it indicates that the image does not include the necessary models such as GPT-SoVITS, UVR5, Damo ASR, etc. You will need to download them yourself and map them into the container.
+    image: sovit:latest   # please change the image name and tag base your environment. If the tag contains the word 'elite', such as "latest-elite", it indicates that the image does not include the necessary models such as GPT-SoVITS, UVR5, Damo ASR, etc. You will need to download them yourself and map them into the container.
     container_name: gpt-sovits-container
     environment:
-      - is_half=False
-      - is_share=False
+      - is_half=true
+      - is_share=true
     volumes:
       - ./output:/workspace/output
       - ./logs:/workspace/logs
       - ./SoVITS_weights:/workspace/SoVITS_weights
       - ./reference:/workspace/reference
+      - ./GPT_weights_v2:/workspace/GPT_weights_v2
+      - ./SoVITS_weights_v2:/workspace/SoVITS_weights_v2
+      - ./GPT_SoVITS/configs:/workspace/GPT_SoVITS/configs
     working_dir: /workspace
     ports:
       - "9880:9880"
@@ -19,6 +21,9 @@ services:
       - "9872:9872"
       - "9873:9873"
       - "9874:9874"
+      - "5006:5006"
+      - "5007:5007"
+      - "5008:5008"
     shm_size: 16G
     deploy:
       resources:

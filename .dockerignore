@@ -1,8 +1,7 @@
-docs
-logs
-output
-reference
-SoVITS_weights
-GPT_weights
-TEMP
 .git
+runtime
+venv
+logs
+GPT_weights_v2
+SoVITS_weights_v2
+docs
