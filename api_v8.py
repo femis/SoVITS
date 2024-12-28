@@ -13,6 +13,8 @@ from pydub import AudioSegment
 import sys
 import os
 
+# 启用并行推理
+os.environ["TOKENIZERS_PARALLELISM"] = "true"  # 或 "true"
 # 获取项目根目录
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), './GPT_SoVITS'))
 print("追加项目根目录:", project_root)

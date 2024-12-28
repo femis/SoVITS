@@ -23,7 +23,7 @@ services:
       - "5006:5006"
       - "5007:5007"
       - "5008:5008"
-    shm_size: 16G
+    shm_size: 32G
     deploy:
       resources:
         reservations:
