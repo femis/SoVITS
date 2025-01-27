@@ -37,3 +37,6 @@ fastapi<0.112.2
 pydub
 flask
 torchvision
+nltk
+soundfile
+uvicorn

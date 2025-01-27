@@ -290,6 +290,6 @@ def find():
         return jsonify({"error": "处理请求时发生内部错误"}), 500  # 返回错误响应
 
 if __name__ == '__main__':
-    parser.add_argument('--port', type=str, default="5403", help='输入端口号')
+    parser.add_argument('--port', type=str, default="5000", help='输入端口号')
     args = parser.parse_args()
     app.run(debug=False, host="0.0.0.0", port=args.port)
