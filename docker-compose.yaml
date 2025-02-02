@@ -1,6 +1,5 @@
-version: '3.8'
 services:
-  voice:
+  sovits:
     build:
       context: .
       dockerfile: Dockerfile
@@ -17,14 +16,8 @@ services:
       - ./SoVITS_weights_v2:/workspace/SoVITS_weights_v2
     working_dir: /workspace
     ports:
-      - "9880:9880"
-      - "9871:9871"
-      - "9872:9872"
-      - "9873:9873"
-      - "9874:9874"
       - "5006:5006"
       - "5007:5007"
-      - "5008:5008"
     shm_size: 16G
     deploy:
       resources:

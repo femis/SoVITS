@@ -13,6 +13,7 @@ from pydub import AudioSegment
 import sys
 import os
 import logging
+import gc  # 移动到头部引入垃圾回收模块
 
 # 配置日志记录器
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -42,7 +43,6 @@ tts_config_cache = {}  # 缓存 TTS_Config 对象
 tts_init_cache = {}
 is_makeing = 0         #是否正在制作中
 
-
 def get_tts_config(req):
     global tts_config_cache  # 使用global声明来访问外部的tts_config_cache
     tts_infer_yaml_path = req.get("tts_infer_yaml_path", "GPT_SoVITS/configs/tts_infer.yaml")
@@ -54,6 +54,7 @@ def get_tts_config(req):
         for instance_id, instance in list(tts_config_cache.items()):
             logger.info(f"删除索引： {instance_id}")
             del tts_config_cache[instance_id]
+        gc.collect()  # 强制进行垃圾回收
 
     # 由于我们可能刚清空了缓存，现在再次检查unique_id是否在缓存中
     if unique_id not in tts_config_cache:
@@ -74,11 +75,12 @@ def init_tts(req):
     if len(tts_init_cache) > tts_init_max:
         logger.info(f"初始化TTS超过{tts_init_max}，清空缓存中...")
         for instance_id, instance in list(tts_init_cache.items()):
-            # 需要清理释放缓/
+            # 需要清理释放缓存/
             instance.stop()
             instance.empty_cache()
             logger.info(f"删除索引： {instance_id}")
             del tts_init_cache[instance_id]
+        gc.collect()  # 强制进行垃圾回收
 
     if unique_id not in tts_init_cache:
         logger.info(f"将TTS实例增加到缓存中...{unique_id}")

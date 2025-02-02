@@ -9,7 +9,7 @@ download_process = subprocess.Popen(["python", download_script])
 download_process.wait()
 print("下载脚本执行完成!")
 
-ports = [5006, 5007, 5008]  # 你可以根据需要更改这些端口号
+ports = [5006, 5007]  # 你可以根据需要更改这些端口号
 # 启动子进程来运行每个脚本
 processes = []
 for port in ports:

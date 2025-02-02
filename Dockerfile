@@ -5,8 +5,8 @@ LABEL maintainer="breakstring@hotmail.com"
 LABEL version="dev-20240209"
 LABEL description="Docker image for GPT-SoVITS"
 
-RUN sed -i 's@http://archive.ubuntu.com/ubuntu/@http://mirrors.aliyun.com/ubuntu/@g' /etc/apt/sources.list && \
-    sed -i 's@http://security.ubuntu.com/ubuntu/@http://mirrors.aliyun.com/ubuntu/@g' /etc/apt/sources.list
+RUN sed -i 's@http://archive.ubuntu.com/ubuntu/@http://mirrors.tuna.tsinghua.edu.cn/ubuntu/@g' /etc/apt/sources.list && \
+    sed -i 's@http://security.ubuntu.com/ubuntu/@http://mirrors.tuna.tsinghua.edu.cn/ubuntu/@g' /etc/apt/sources.list
 
 # Install 3rd party apps
 ENV DEBIAN_FRONTEND=noninteractive
@@ -61,6 +61,6 @@ COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python
 # Copy the rest of the application
 COPY . /workspace
 
-EXPOSE 5006 5007 5008
+EXPOSE 5006 5007
 
 CMD ["python", "api_run.py"]
