@@ -7,13 +7,6 @@ services:
     environment:
       - is_half=true
       - is_share=true
-    volumes:
-      - ./output:/workspace/output
-      - ./logs:/workspace/logs
-      - ./SoVITS_weights:/workspace/SoVITS_weights
-      - ./reference:/workspace/reference
-      - ./GPT_weights_v2:/workspace/GPT_weights_v2
-      - ./SoVITS_weights_v2:/workspace/SoVITS_weights_v2
     working_dir: /workspace
     ports:
       - "5006:5006"

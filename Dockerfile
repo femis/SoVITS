@@ -1,10 +1,6 @@
 # 第一阶段：安装依赖和预处理
 FROM cnstark/pytorch:2.0.1-py3.9.17-cuda11.8.0-ubuntu20.04 AS builder
 
-LABEL maintainer="breakstring@hotmail.com"
-LABEL version="dev-20240209"
-LABEL description="Docker image for GPT-SoVITS"
-
 RUN sed -i 's@http://archive.ubuntu.com/ubuntu/@http://mirrors.tuna.tsinghua.edu.cn/ubuntu/@g' /etc/apt/sources.list && \
     sed -i 's@http://security.ubuntu.com/ubuntu/@http://mirrors.tuna.tsinghua.edu.cn/ubuntu/@g' /etc/apt/sources.list
 
@@ -16,34 +12,23 @@ RUN apt-get update && \
     git lfs install && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy only requirements.txt initially to leverage Docker cache
+
 WORKDIR /workspace
+
 COPY requirements.txt /workspace/
-RUN pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 
-# Define a build-time argument for image type
-ARG IMAGE_TYPE=elite
+# 安装依赖到集中目录并压缩
+RUN mkdir -p /opt/venv && \
+    pip install --target /opt/venv -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host=pypi.tuna.tsinghua.edu.cn && \
+    cd /opt && \
+    tar -czf venv.tar.gz venv && \
+    rm -rf venv
 
-# Conditional logic based on the IMAGE_TYPE argument
-# Always copy the Docker directory, but only use it if IMAGE_TYPE is not "elite"
-COPY ./Docker /workspace/Docker 
-# elite 类型的镜像里面不包含额外的模型
-RUN if [ "$IMAGE_TYPE" != "elite" ]; then \
-		chmod +x /workspace/Docker/download.sh && \
-		sed -i 's/\r$//' /workspace/Docker/download.sh && \
-		sed -i 's/\r$//' /workspace/Docker/links.txt && \
-		sed -i 's/\r$//' /workspace/Docker/links.sha256 && \
-		/workspace/Docker/download.sh && \
-        python /workspace/Docker/download.py && \
-        python -m nltk.downloader averaged_perceptron_tagger cmudict; \
-    fi
+COPY . .
+
 
 # 第二阶段：最终应用构建
 FROM cnstark/pytorch:2.0.1-py3.9.17-cuda11.8.0-ubuntu20.04
-
-LABEL maintainer="breakstring@hotmail.com"
-LABEL version="dev-20240209"
-LABEL description="Docker image for GPT-SoVITS"
 
 # 安装ffmpeg和其他必要的依赖
 ENV DEBIAN_FRONTEND=noninteractive
@@ -53,14 +38,10 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # 复制第一阶段构建的结果
+COPY --from=builder /opt/venv.tar.gz /opt/
 COPY --from=builder /workspace /workspace
-
-# 从builder阶段复制已安装的Python依赖
-COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
-
-# Copy the rest of the application
-COPY . /workspace
 
 EXPOSE 5006 5007
 
-CMD ["python", "api_run.py"]
+# 修改 CMD 指令以运行 docker_run.sh 脚本
+CMD ["/workspace/docker_run.sh"]
